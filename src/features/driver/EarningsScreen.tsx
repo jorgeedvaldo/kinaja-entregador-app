@@ -21,15 +21,18 @@ import { useAuth } from '../../hooks/useAuth';
 export default function EarningsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { completedOrders, isLoading, fetchCompletedOrders } = useOrders();
+  const { historyOrders, isLoading, fetchOrderHistory } = useOrders();
 
   useEffect(() => {
-    fetchCompletedOrders();
-  }, [fetchCompletedOrders]);
+    fetchOrderHistory();
+  }, [fetchOrderHistory]);
+
+  // Extract only delivered orders for earnings calculations
+  const deliveredOrders = historyOrders.filter((o) => o.status === 'delivered');
 
   // Calculate today's earnings
   const today = new Date().toISOString().split('T')[0];
-  const todaysOrders = completedOrders.filter(
+  const todaysOrders = deliveredOrders.filter(
     (o) => o.created_at.split('T')[0] === today
   );
   const todaysEarnings = todaysOrders.reduce(
@@ -40,7 +43,7 @@ export default function EarningsScreen() {
   // Calculate this week's earnings
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const weeksOrders = completedOrders.filter(
+  const weeksOrders = deliveredOrders.filter(
     (o) => new Date(o.created_at) >= weekAgo
   );
   const weeksEarnings = weeksOrders.reduce(
@@ -49,14 +52,14 @@ export default function EarningsScreen() {
   );
 
   // Total all time
-  const totalEarnings = completedOrders.reduce(
+  const totalEarnings = deliveredOrders.reduce(
     (sum, o) => sum + parseFloat(o.delivery_fee || '0'),
     0
   );
 
   const handleRefresh = useCallback(() => {
-    fetchCompletedOrders();
-  }, [fetchCompletedOrders]);
+    fetchOrderHistory();
+  }, [fetchOrderHistory]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -107,7 +110,7 @@ export default function EarningsScreen() {
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>
-              {completedOrders.length}
+              {deliveredOrders.length}
             </Text>
             <Text style={styles.statLabel}>Entregas</Text>
           </View>
@@ -117,7 +120,7 @@ export default function EarningsScreen() {
         <View style={styles.recentSection}>
           <Text style={styles.sectionTitle}>Entregas Recentes</Text>
 
-          {completedOrders.length === 0 ? (
+          {deliveredOrders.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>💰</Text>
               <Text style={styles.emptyText}>
@@ -128,7 +131,7 @@ export default function EarningsScreen() {
               </Text>
             </View>
           ) : (
-            completedOrders.slice(0, 20).map((order) => (
+            deliveredOrders.slice(0, 20).map((order) => (
               <View key={order.id} style={styles.deliveryRow}>
                 <View style={styles.deliveryIcon}>
                   <Text style={styles.deliveryEmoji}>✅</Text>

@@ -28,6 +28,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useLocation } from '../../hooks/useLocation';
 import { useOrders } from '../../hooks/useOrders';
 import { useDriverStore } from '../../store/driverStore';
+import { useOrderStore } from '../../store/orderStore';
 import type { MainStackParamList } from '../../types';
 
 type HomeNav = StackNavigationProp<MainStackParamList, 'MainTabs'>;
@@ -48,6 +49,7 @@ export default function HomeScreen() {
 
   const mapRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
+  const lastActiveOrderId = useRef<number | null>(null);
 
   // Request location permissions on mount
   useEffect(() => {
@@ -65,11 +67,14 @@ export default function HomeScreen() {
 
   // Navigate to active order when one is accepted, and force online status
   useEffect(() => {
-    if (activeOrder) {
+    if (activeOrder && activeOrder.id !== lastActiveOrderId.current) {
       if (!isOnline) {
         useDriverStore.setState({ isOnline: true });
       }
+      lastActiveOrderId.current = activeOrder.id;
       navigation.navigate('ActiveOrder', { orderId: activeOrder.id });
+    } else if (!activeOrder) {
+      lastActiveOrderId.current = null;
     }
   }, [activeOrder, navigation, isOnline]);
 
@@ -105,9 +110,11 @@ export default function HomeScreen() {
   }, [acceptOrder]);
 
   // Decline order (dismiss from list)
-  const handleDeclineOrder = useCallback((_orderId: number) => {
-    // In production, this would notify the backend
-    // For now, we just dismiss the card
+  const handleDeclineOrder = useCallback((orderId: number) => {
+    // Remove from local availableOrders so it stops showing in the overlay
+    useOrderStore.setState((state) => ({
+      availableOrders: state.availableOrders.filter((o) => o.id !== orderId)
+    }));
   }, []);
 
   // Show the first available order as the overlay card
@@ -191,11 +198,29 @@ export default function HomeScreen() {
         />
       </View>
 
+      {/* Active order banner (in case user went back) */}
+      {activeOrder && (
+        <TouchableOpacity
+          style={[styles.activeOrderBanner, { top: insets.top + 80 }]}
+          onPress={() => navigation.navigate('ActiveOrder', { orderId: activeOrder.id })}
+          activeOpacity={0.9}
+        >
+          <View style={styles.bannerIconContainer}>
+            <Text style={styles.bannerIcon}>📦</Text>
+          </View>
+          <View style={styles.bannerTextContainer}>
+            <Text style={styles.bannerTitle}>Entrega em Andamento</Text>
+            <Text style={styles.bannerSubtitle}>Toque para voltar ao mapa da entrega</Text>
+          </View>
+          <Text style={styles.bannerArrow}>→</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Center map FAB */}
       <TouchableOpacity
         style={[
           styles.centerFab,
-          { bottom: pendingOrder ? 360 : 100 },
+          { bottom: pendingOrder && isOnline && !activeOrder ? 360 : 100 },
         ]}
         onPress={handleCenterMap}
         activeOpacity={0.8}
@@ -220,6 +245,51 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.gray200,
+  },
+  activeOrderBanner: {
+    position: 'absolute',
+    left: SPACING.xl,
+    right: SPACING.xl,
+    zIndex: 15,
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 16,
+    padding: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.kinaRed,
+    ...SHADOWS.md,
+  },
+  bannerIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.dangerLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.md,
+  },
+  bannerIcon: {
+    fontSize: 20,
+  },
+  bannerTextContainer: {
+    flex: 1,
+  },
+  bannerTitle: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 16,
+    color: COLORS.textPrimary,
+  },
+  bannerSubtitle: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  bannerArrow: {
+    fontSize: 20,
+    color: COLORS.textTertiary,
+    marginLeft: SPACING.sm,
   },
   headerContainer: {
     position: 'absolute',

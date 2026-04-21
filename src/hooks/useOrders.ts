@@ -17,15 +17,16 @@ export function useOrders() {
   const {
     availableOrders,
     activeOrder,
-    completedOrders,
+    historyOrders,
     isLoading,
     isUpdating,
     fetchAvailableOrders,
     acceptOrder,
     updateStatus,
     setActiveOrder,
-    fetchCompletedOrders,
+    fetchOrderHistory,
     recoverSession,
+    checkActiveOrderStatus,
   } = useOrderStore();
 
   const isOnline = useDriverStore((s) => s.isOnline);
@@ -34,12 +35,14 @@ export function useOrders() {
   // Auto-poll for available orders when driver is online and has no active order
   useEffect(() => {
     if (isOnline && !activeOrder) {
-      // Fetch immediately
       fetchAvailableOrders();
-
-      // Then poll periodically
       pollRef.current = setInterval(() => {
-        fetchAvailableOrders();
+        fetchAvailableOrders(true); // silent fetch
+      }, POLL_INTERVAL);
+    } else if (isOnline && activeOrder) {
+      // Poll active order for status changes/cancellations
+      pollRef.current = setInterval(() => {
+        checkActiveOrderStatus();
       }, POLL_INTERVAL);
     }
 
@@ -49,7 +52,7 @@ export function useOrders() {
         pollRef.current = null;
       }
     };
-  }, [isOnline, activeOrder, fetchAvailableOrders]);
+  }, [isOnline, activeOrder, fetchAvailableOrders, checkActiveOrderStatus]);
 
   /** Accept an order — sets it as active and stops polling */
   const handleAcceptOrder = useCallback(
@@ -70,14 +73,14 @@ export function useOrders() {
   return {
     availableOrders,
     activeOrder,
-    completedOrders,
+    historyOrders,
     isLoading,
     isUpdating,
     acceptOrder: handleAcceptOrder,
     updateStatus: handleUpdateStatus,
     setActiveOrder,
     fetchAvailableOrders,
-    fetchCompletedOrders,
+    fetchOrderHistory,
     recoverSession,
   };
 }

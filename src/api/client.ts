@@ -11,7 +11,7 @@ import { API_BASE_URL } from '@env';
 
 /** Create Axios instance with base configuration */
 const apiClient = axios.create({
-  baseURL: API_BASE_URL || 'http://localhost:8000/api',
+  baseURL: API_BASE_URL || 'https://kinaja.toolpdf.org/api',
   timeout: 15000,
   headers: {
     'Accept': 'application/json',

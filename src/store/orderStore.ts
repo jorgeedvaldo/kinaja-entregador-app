@@ -12,23 +12,25 @@ interface OrderState {
   availableOrders: Order[];
   /** Currently active order being delivered */
   activeOrder: Order | null;
-  /** Completed order history for earnings */
-  completedOrders: Order[];
+  /** History of all orders assigned to this driver */
+  historyOrders: Order[];
   /** Loading states */
   isLoading: boolean;
   isUpdating: boolean;
 
   // Actions
-  /** Fetch available orders from API */
-  fetchAvailableOrders: () => Promise<void>;
+  /** Fetch available orders from API (optionally silent) */
+  fetchAvailableOrders: (silent?: boolean) => Promise<void>;
   /** Accept an order and set it as active */
   acceptOrder: (orderId: number) => Promise<void>;
   /** Update the active order status */
   updateStatus: (orderId: number, status: OrderStatus) => Promise<void>;
   /** Set active order directly */
   setActiveOrder: (order: Order | null) => void;
-  /** Fetch completed orders for earnings */
-  fetchCompletedOrders: () => Promise<void>;
+  /** Poll active order to check for unexpected cancellations */
+  checkActiveOrderStatus: () => Promise<void>;
+  /** Fetch full history of orders for this driver */
+  fetchOrderHistory: () => Promise<void>;
   /** Recover offline state */
   recoverSession: () => Promise<void>;
   /** Clear all order state (on logout) */
@@ -38,17 +40,17 @@ interface OrderState {
 export const useOrderStore = create<OrderState>((set, get) => ({
   availableOrders: [],
   activeOrder: null,
-  completedOrders: [],
+  historyOrders: [],
   isLoading: false,
   isUpdating: false,
 
-  fetchAvailableOrders: async () => {
-    set({ isLoading: true });
+  fetchAvailableOrders: async (silent = false) => {
+    if (!silent) set({ isLoading: true });
     try {
       const orders = await driverApi.getAvailableOrders();
       set({ availableOrders: orders, isLoading: false });
     } catch (error) {
-      set({ isLoading: false });
+      if (!silent) set({ isLoading: false });
       console.error('[Orders] Failed to fetch available orders:', error);
     }
   },
@@ -57,7 +59,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ isUpdating: true });
     try {
       const response = await driverApi.acceptOrder(orderId);
-      const acceptedOrder = response.data;
+      const acceptedOrder = (response as any).data || response;
 
       set((state) => ({
         activeOrder: acceptedOrder,
@@ -75,13 +77,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     try {
       await ordersApi.updateOrderStatus(orderId, status);
 
-      // If delivered, move to completed and clear active
+      // If delivered, move to history and clear active
       if (status === 'delivered') {
         set((state) => ({
           activeOrder: null,
-          completedOrders: state.activeOrder
-            ? [{ ...state.activeOrder, status }, ...state.completedOrders]
-            : state.completedOrders,
+          historyOrders: state.activeOrder
+            ? [{ ...state.activeOrder, status }, ...state.historyOrders]
+            : state.historyOrders,
           isUpdating: false,
         }));
       } else {
@@ -103,13 +105,41 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ activeOrder: order });
   },
 
-  fetchCompletedOrders: async () => {
+  checkActiveOrderStatus: async () => {
+    const { activeOrder, setActiveOrder } = get();
+    if (!activeOrder) return;
+
     try {
+      const latestData = await ordersApi.getOrderDetails(activeOrder.id);
+      if (latestData && latestData.status === 'cancelled') {
+        // Order was cancelled externally
+        setActiveOrder(null);
+        // We trigger an alert asynchronously
+        setTimeout(() => {
+          import('react-native').then(({ Alert }) => {
+            Alert.alert(
+              'Encomenda Cancelada',
+              `O utilizador ou restaurante cancelou a encomenda #${activeOrder.id}.`,
+              [{ text: 'OK' }]
+            );
+          });
+        }, 100);
+      } else if (latestData && latestData.status !== activeOrder.status) {
+        // Just sync other status changes quietly if any
+        set({ activeOrder: { ...activeOrder, status: latestData.status } });
+      }
+    } catch (e) {
+      console.warn('[Orders] Quiet poll for active order failed', e);
+    }
+  },
+
+  fetchOrderHistory: async () => {
+    try {
+      // getOrders() fetches all orders associated with the signed-in driver
       const orders = await ordersApi.getOrders();
-      const completed = orders.filter((o) => o.status === 'delivered');
-      set({ completedOrders: completed });
+      set({ historyOrders: orders });
     } catch (error) {
-      console.error('[Orders] Failed to fetch completed orders:', error);
+      console.error('[Orders] Failed to fetch order history:', error);
     }
   },
 
@@ -134,6 +164,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       set({ 
         activeOrder: active || null, 
         availableOrders: available,
+        historyOrders: myOrders,
         isLoading: false 
       });
     } catch (error) {
@@ -146,7 +177,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({
       availableOrders: [],
       activeOrder: null,
-      completedOrders: [],
+      historyOrders: [],
       isLoading: false,
       isUpdating: false,
     });

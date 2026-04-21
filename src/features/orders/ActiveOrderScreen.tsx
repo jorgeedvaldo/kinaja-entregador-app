@@ -159,9 +159,15 @@ export default function ActiveOrderScreen() {
         )}
 
         {/* Route polyline — driver to restaurant */}
-        {routeData?.toRestaurant && isPickupPhase && RNPolyline && (
+        {isPickupPhase && RNPolyline && (
           <RNPolyline
-            coordinates={routeData.toRestaurant.coordinates}
+            coordinates={
+              routeData?.toRestaurant
+                ? routeData.toRestaurant.coordinates
+                : currentLocation && restaurantLocation
+                  ? [currentLocation, restaurantLocation]
+                  : []
+            }
             strokeColor={COLORS.kinaRed}
             strokeWidth={4}
             lineDashPattern={[10, 5]}
@@ -169,11 +175,18 @@ export default function ActiveOrderScreen() {
         )}
 
         {/* Route polyline — restaurant to client */}
-        {routeData?.toClient && RNPolyline && (
+        {RNPolyline && (
           <RNPolyline
-            coordinates={routeData.toClient.coordinates}
+            coordinates={
+              routeData?.toClient
+                ? routeData.toClient.coordinates
+                : restaurantLocation && clientLocation
+                  ? [restaurantLocation, clientLocation]
+                  : []
+            }
             strokeColor={isPickupPhase ? COLORS.info : COLORS.success}
             strokeWidth={4}
+            lineDashPattern={!routeData?.toClient ? [10, 5] : undefined}
           />
         )}
       </RNMapView>
