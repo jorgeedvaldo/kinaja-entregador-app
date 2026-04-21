@@ -34,8 +34,12 @@ export const useDriverStore = create<DriverState>((set, get) => ({
     set({ isToggling: true });
     try {
       const response = await driverApi.toggleOnline();
+      
+      // Handle cases where the backend returns the object directly instead of wrapped in { data: ... }
+      const driverData = response.data ? response.data : (response as unknown as any);
+
       set({
-        isOnline: response.data.is_online,
+        isOnline: driverData.is_online,
         isToggling: false,
       });
     } catch (error) {
