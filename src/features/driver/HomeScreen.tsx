@@ -43,6 +43,7 @@ export default function HomeScreen() {
     activeOrder,
     isUpdating,
     acceptOrder,
+    recoverSession,
   } = useOrders();
 
   const mapRef = useRef<any>(null);
@@ -57,12 +58,20 @@ export default function HomeScreen() {
     }
   }, [requestPermissions, getCurrentPosition]);
 
-  // Navigate to active order when one is accepted
+  // Recover offline state on mount
+  useEffect(() => {
+    recoverSession();
+  }, [recoverSession]);
+
+  // Navigate to active order when one is accepted, and force online status
   useEffect(() => {
     if (activeOrder) {
+      if (!isOnline) {
+        useDriverStore.setState({ isOnline: true });
+      }
       navigation.navigate('ActiveOrder', { orderId: activeOrder.id });
     }
-  }, [activeOrder, navigation]);
+  }, [activeOrder, navigation, isOnline]);
 
   // Center map on driver location
   const handleCenterMap = useCallback(() => {

@@ -83,7 +83,7 @@ export function useLocation() {
     watchRef.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.High,
-        distanceInterval: LOCATION_CONFIG.DISTANCE_FILTER,
+        distanceInterval: 1, // Reduced to 1 meter so it updates faster initially
         timeInterval: 3000, // Minimum 3 seconds between updates
       },
       (location) => {
@@ -95,11 +95,14 @@ export function useLocation() {
         // Always update local state
         setLocation(coords);
 
+        // Access the freshest isOnline from the store state to avoid closure bugs
+        const currentIsOnline = useDriverStore.getState().isOnline;
+
         // Throttle API updates
         const now = Date.now();
         if (now - lastApiUpdateRef.current >= LOCATION_CONFIG.UPDATE_INTERVAL_MS) {
           lastApiUpdateRef.current = now;
-          if (isOnline) {
+          if (currentIsOnline) {
             sendLocationToApi(coords);
           }
         }

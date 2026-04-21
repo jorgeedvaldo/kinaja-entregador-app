@@ -42,6 +42,14 @@ export const useDriverStore = create<DriverState>((set, get) => ({
         isOnline: driverData.is_online,
         isToggling: false,
       });
+
+      // Immediately push location if they went online and have a known location
+      if (driverData.is_online) {
+        const coords = get().currentLocation;
+        if (coords) {
+          get().sendLocationToApi(coords);
+        }
+      }
     } catch (error) {
       set({ isToggling: false });
       throw error;

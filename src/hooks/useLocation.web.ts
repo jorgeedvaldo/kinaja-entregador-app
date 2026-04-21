@@ -16,20 +16,32 @@ export function useLocation() {
   const currentLocation = useDriverStore((s) => s.currentLocation);
 
   const requestPermissions = useCallback(async (): Promise<boolean> => {
-    console.warn('[Location] GPS not available on web');
-    return false;
+    console.log('[Location] Emulating GPS permissions on Web for testing');
+    return true;
   }, []);
 
   const getCurrentPosition = useCallback(async (): Promise<LatLng | null> => {
-    return null;
+    const mockPos = { latitude: -8.8383, longitude: 13.2344 };
+    useDriverStore.getState().setLocation(mockPos);
+    return mockPos;
   }, []);
 
-  const startTracking = useCallback(async () => {}, []);
+  const startTracking = useCallback(async () => {
+    const store = useDriverStore.getState();
+    const mockPos = { latitude: -8.8383, longitude: 13.2344 };
+    store.setLocation(mockPos);
+    
+    // Push the mock location directly to the API if online to simulate movement
+    if (store.isOnline) {
+      store.sendLocationToApi(mockPos);
+    }
+  }, []);
+
   const stopTracking = useCallback(() => {}, []);
 
   return {
     currentLocation,
-    hasPermission,
+    hasPermission: true,
     isTracking,
     requestPermissions,
     getCurrentPosition,

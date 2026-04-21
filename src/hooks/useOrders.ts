@@ -25,6 +25,7 @@ export function useOrders() {
     updateStatus,
     setActiveOrder,
     fetchCompletedOrders,
+    recoverSession,
   } = useOrderStore();
 
   const isOnline = useDriverStore((s) => s.isOnline);
@@ -77,5 +78,6 @@ export function useOrders() {
     setActiveOrder,
     fetchAvailableOrders,
     fetchCompletedOrders,
+    recoverSession,
   };
 }

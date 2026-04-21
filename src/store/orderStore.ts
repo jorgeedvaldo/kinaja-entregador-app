@@ -29,6 +29,8 @@ interface OrderState {
   setActiveOrder: (order: Order | null) => void;
   /** Fetch completed orders for earnings */
   fetchCompletedOrders: () => Promise<void>;
+  /** Recover offline state */
+  recoverSession: () => Promise<void>;
   /** Clear all order state (on logout) */
   clearOrders: () => void;
 }
@@ -108,6 +110,35 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       set({ completedOrders: completed });
     } catch (error) {
       console.error('[Orders] Failed to fetch completed orders:', error);
+    }
+  },
+
+  recoverSession: async () => {
+    set({ isLoading: true });
+    try {
+      const myOrders = await ordersApi.getOrders();
+      
+      // Find the first active delivery
+      const active = myOrders.find((o) => 
+        ['accepted', 'preparing', 'ready', 'in_transit'].includes(o.status)
+      );
+
+      // Attempt to immediately fetch available orders 
+      let available: Order[] = [];
+      try {
+        available = await driverApi.getAvailableOrders();
+      } catch (e) {
+        console.warn('[Orders] Could not fetch available initially:', e);
+      }
+
+      set({ 
+        activeOrder: active || null, 
+        availableOrders: available,
+        isLoading: false 
+      });
+    } catch (error) {
+      set({ isLoading: false });
+      console.error('[Orders] Failed to recover session:', error);
     }
   },
 
