@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "kinaja-entregador-app",
+    "name": "Kina Já Entregador",
     "slug": "kinaja-entregador-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,20 +10,55 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#EB2835"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kinaja.entregador",
+      "config": {
+        "googleMapsApiKey": "YOUR_KEY"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Precisamos da sua localização para mostrar sua posição no mapa e calcular rotas de entrega.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Precisamos da sua localização em segundo plano para rastrear entregas ativas.",
+        "NSLocationAlwaysUsageDescription": "Precisamos da sua localização para rastrear entregas mesmo quando o app está em segundo plano."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#EB2835"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.kinaja.entregador",
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_KEY"
+        }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Precisamos da sua localização para rastrear entregas.",
+          "locationAlwaysPermission": "Permitir localização em segundo plano para rastrear entregas ativas.",
+          "locationWhenInUsePermission": "Permitir localização para mostrar sua posição no mapa."
+        }
+      ],
+      [
+        "expo-secure-store"
+      ]
+    ]
   }
 }
