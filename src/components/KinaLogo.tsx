@@ -48,14 +48,11 @@ export default function KinaLogo({ scale = 1, animate = true }: KinaLogoProps) {
         },
       ]}
     >
-      {/* KINA block — cream background, slight rotation */}
-      <View style={[styles.kinaBlock, { transform: [{ rotate: '-2deg' }] }]}>
-        <Text style={styles.kinaText}>KINA</Text>
-      </View>
-
-      {/* JÁ block — red background with cream border, opposite rotation */}
-      <View style={[styles.jaBlock, { transform: [{ rotate: '3deg' }] }]}>
-        <Text style={styles.jaText}>JÁ</Text>
+      <View style={styles.bubble}>
+        <Text style={styles.textKina}>KINA</Text>
+        <Text style={styles.textJa}>JÁ</Text>
+        {/* Tail of the speech bubble */}
+        <View style={styles.tail} />
       </View>
     </Animated.View>
   );
@@ -66,45 +63,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  kinaBlock: {
-    backgroundColor: COLORS.kinaCream,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: RADII.lg,
-    marginBottom: -8,
-    zIndex: 2,
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  kinaText: {
-    fontFamily: FONTS.black,
-    fontSize: 48,
-    color: COLORS.kinaRed,
-    letterSpacing: -2,
-  },
-  jaBlock: {
-    backgroundColor: COLORS.kinaRed,
-    paddingHorizontal: 24,
-    paddingVertical: 8,
+  bubble: {
+    backgroundColor: COLORS.kinaOrange, // Using the orange from the left side of the new logo
+    paddingHorizontal: 32,
+    paddingVertical: 16,
     borderRadius: RADII.xl,
-    borderWidth: 4,
-    borderColor: COLORS.kinaCream,
-    zIndex: 1,
+    borderBottomLeftRadius: RADII.sm, // Make it look a bit like a speech bubble
+    alignItems: 'flex-end',
     // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowColor: COLORS.kinaRedDark,
+    shadowOffset: { width: 4, height: 6 },
+    shadowOpacity: 0.8,
+    shadowRadius: 0,
     elevation: 10,
+    borderWidth: 2,
+    borderColor: COLORS.kinaRed,
   },
-  jaText: {
+  textKina: {
     fontFamily: FONTS.black,
     fontSize: 48,
     color: COLORS.kinaCream,
+    letterSpacing: -1,
+    lineHeight: 52,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius: 1,
+  },
+  textJa: {
+    fontFamily: FONTS.black,
+    fontSize: 56,
+    color: COLORS.kinaCream,
     letterSpacing: -2,
+    lineHeight: 60,
+    marginTop: -8,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius: 1,
+  },
+  tail: {
+    position: 'absolute',
+    bottom: -15,
+    left: 20,
+    width: 0,
+    height: 0,
+    borderTopWidth: 15,
+    borderTopColor: COLORS.kinaOrange,
+    borderRightWidth: 15,
+    borderRightColor: 'transparent',
+    borderLeftWidth: 10,
+    borderLeftColor: 'transparent',
+    zIndex: -1,
   },
 });

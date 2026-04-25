@@ -197,8 +197,12 @@ export default function ActiveOrderScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* Map taking upper portion */}
-      <View style={styles.mapContainer}>
+      {/* Map taking upper portion (Clickable to expand to full navigation) */}
+      <TouchableOpacity 
+        style={styles.mapContainer}
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate('MapTracking', { orderId: activeOrder.id })}
+      >
         {renderMap()}
 
         {/* Back button */}
@@ -209,15 +213,13 @@ export default function ActiveOrderScreen() {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
 
-        {/* ETA pill overlay */}
-        {currentLegRoute && (
-          <View style={[styles.etaPill, { top: insets.top + 8 }]}>
-            <Text style={styles.etaText}>
-              {currentLegRoute.duration} • {currentLegRoute.distance}
-            </Text>
-          </View>
-        )}
-      </View>
+        {/* Click to navigate hint */}
+        <View style={[styles.etaPill, { top: insets.top + 8 }]}>
+          <Text style={styles.etaText}>
+            {currentLegRoute ? `${currentLegRoute.duration} • Toque para Iniciar Trajeto` : 'Toque para Iniciar Trajeto'}
+          </Text>
+        </View>
+      </TouchableOpacity>
 
       {/* Bottom sheet with order info */}
       <View style={styles.bottomSheet}>
@@ -269,6 +271,12 @@ export default function ActiveOrderScreen() {
 
           {/* Action button */}
           <View style={styles.actionContainer}>
+            <ActionButton
+              title="🧭 Iniciar Trajeto"
+              onPress={() => navigation.navigate('MapTracking', { orderId: activeOrder.id })}
+              variant="secondary"
+            />
+            <View style={{ height: 12 }} />
             <ActionButton
               title={actionLabel}
               onPress={handleStatusUpdate}

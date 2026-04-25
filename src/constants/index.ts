@@ -36,6 +36,7 @@ export const VEHICLE_TYPE_LABELS = {
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'kinaja_auth_token',
   USER_DATA: 'kinaja_user_data',
+  DRIVER_IS_ONLINE: 'kinaja_driver_is_online',
 } as const;
 
 /** Location tracking config */

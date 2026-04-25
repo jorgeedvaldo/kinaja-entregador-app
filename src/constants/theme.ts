@@ -6,11 +6,11 @@
 /** Brand colors from the Kina Já design reference */
 export const COLORS = {
   // Brand
-  kinaRed: '#EB2835',
-  kinaRedDark: '#C41E2A',
-  kinaRedLight: '#FF4D5A',
-  kinaCream: '#FBEFB8',
-  kinaCreamDark: '#E8D98A',
+  kinaRed: '#E51B24',       // Red from the logo bubble
+  kinaRedDark: '#B31219',
+  kinaOrange: '#FF7E00',    // Orange from the left side of the bubble
+  kinaCream: '#FFFDF5',     // Almost white/light cream for text
+  kinaCreamDark: '#FDEFB2',
 
   // Backgrounds
   bgDark: '#1A1A2E',

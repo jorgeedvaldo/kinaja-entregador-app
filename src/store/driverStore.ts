@@ -6,6 +6,9 @@ import { create } from 'zustand';
 import * as driverApi from '../api/driver';
 import type { LatLng } from '../types';
 
+import * as storage from '../utils/storage';
+import { STORAGE_KEYS } from '../constants';
+
 interface DriverState {
   /** Whether the driver is currently online */
   isOnline: boolean;
@@ -23,6 +26,8 @@ interface DriverState {
   sendLocationToApi: (location: LatLng) => Promise<void>;
   /** Reset driver state (on logout) */
   reset: () => void;
+  /** Fetch the current driver profile to get the correct online state */
+  fetchProfile: () => Promise<void>;
 }
 
 export const useDriverStore = create<DriverState>((set, get) => ({
@@ -38,13 +43,22 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       // Handle cases where the backend returns the object directly instead of wrapped in { data: ... }
       const driverData = response.data ? response.data : (response as unknown as any);
 
+      const newIsOnline = !!driverData.is_online;
+
+      // Save the state locally to survive app restarts
+      if (newIsOnline) {
+        await storage.setItem(STORAGE_KEYS.DRIVER_IS_ONLINE, 'true');
+      } else {
+        await storage.deleteItem(STORAGE_KEYS.DRIVER_IS_ONLINE);
+      }
+
       set({
-        isOnline: driverData.is_online,
+        isOnline: newIsOnline,
         isToggling: false,
       });
 
       // Immediately push location if they went online and have a known location
-      if (driverData.is_online) {
+      if (newIsOnline) {
         const coords = get().currentLocation;
         if (coords) {
           get().sendLocationToApi(coords);
@@ -70,10 +84,26 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   },
 
   reset: () => {
+    storage.deleteItem(STORAGE_KEYS.DRIVER_IS_ONLINE);
     set({
       isOnline: false,
       currentLocation: null,
       isToggling: false,
     });
+  },
+
+  fetchProfile: async () => {
+    try {
+      // Since GET /api/driver/profile is not supported, we load the online status from local storage
+      const savedStatus = await storage.getItem(STORAGE_KEYS.DRIVER_IS_ONLINE);
+      
+      if (savedStatus === 'true') {
+        set({ isOnline: true });
+      } else {
+        set({ isOnline: false });
+      }
+    } catch (error) {
+      console.warn('[Driver] Failed to load offline state from storage:', error);
+    }
   },
 }));

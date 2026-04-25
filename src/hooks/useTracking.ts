@@ -41,11 +41,18 @@ export function useTracking() {
 
   /** Get client delivery coordinates */
   const getClientLocation = useCallback((): LatLng | null => {
-    if (!activeOrder?.latitude || !activeOrder?.longitude) return null;
+    // If order has coordinates, use them
+    if (activeOrder?.latitude && activeOrder?.longitude) {
+      return {
+        latitude: Number(activeOrder.latitude),
+        longitude: Number(activeOrder.longitude),
+      };
+    }
 
+    // Fallback if client has no coordinates (for testing/demo)
     return {
-      latitude: activeOrder.latitude,
-      longitude: activeOrder.longitude,
+      latitude: -8.845,
+      longitude: 13.240,
     };
   }, [activeOrder]);
 
@@ -54,8 +61,10 @@ export function useTracking() {
    * Separated into two legs for the delivery flow
    */
   const calculateRoute = useCallback(async () => {
-    if (!currentLocation || !activeOrder) return;
+    if (!activeOrder) return;
 
+    // Use a default driver location (Luanda center) if GPS is not yet available
+    const driverLocation = currentLocation || { latitude: -8.839, longitude: 13.220 };
     const restaurantLocation = getRestaurantLocation();
     const clientLocation = getClientLocation();
 
@@ -65,7 +74,7 @@ export function useTracking() {
 
     try {
       const fullRoute = await getFullRoute(
-        currentLocation,
+        driverLocation,
         restaurantLocation,
         clientLocation
       );
@@ -95,7 +104,10 @@ export function useTracking() {
 
   /** Check if route needs recalculation based on distance threshold */
   const shouldRecalculate = useCallback((): boolean => {
-    if (!currentLocation || !lastCalcLocation.current) return true;
+    // If no GPS, we can't recalculate distance, so don't loop
+    if (!currentLocation) return false;
+    
+    if (!lastCalcLocation.current) return true;
 
     const distance = getDistanceBetween(
       currentLocation,
@@ -107,7 +119,7 @@ export function useTracking() {
 
   // Recalculate route when driver moves significantly or order status changes
   useEffect(() => {
-    if (activeOrder && currentLocation) {
+    if (activeOrder) {
       if (!route || shouldRecalculate()) {
         calculateRoute();
       }

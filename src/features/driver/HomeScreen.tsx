@@ -38,7 +38,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { currentLocation, requestPermissions, getCurrentPosition } = useLocation();
-  const { isOnline, isToggling, toggleOnline } = useDriverStore();
+  const { isOnline, isToggling, toggleOnline, fetchProfile } = useDriverStore();
   const {
     availableOrders,
     activeOrder,
@@ -51,14 +51,16 @@ export default function HomeScreen() {
   const [mapReady, setMapReady] = useState(false);
   const lastActiveOrderId = useRef<number | null>(null);
 
-  // Request location permissions on mount
+  // Request location permissions and driver profile on mount
   useEffect(() => {
+    fetchProfile();
+    
     if (Platform.OS !== 'web') {
       requestPermissions().then(() => {
         getCurrentPosition();
       });
     }
-  }, [requestPermissions, getCurrentPosition]);
+  }, [requestPermissions, getCurrentPosition, fetchProfile]);
 
   // Recover offline state on mount
   useEffect(() => {
